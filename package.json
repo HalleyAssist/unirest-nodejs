@@ -9,7 +9,7 @@
   "dependencies": {
     "form-data": "^0.2.0",
     "mime-types": "2.x",
-    "request": "~2.74.0"
+    "needle": "~2.2.1"
   },
   "devDependencies": {
     "body-parser": "^1.15.1",

@@ -800,9 +800,7 @@ var Unirest = function (method, uri, headers, body, callback) {
 /**
  * Expose the underlying layer.
  */
-Unirest.request = require('request')
-Unirest.cookie = Unirest.request.cookie
-Unirest.pipe = Unirest.request.pipe
+Unirest.request = require('needle')
 
 /**
  * Mime-type lookup / parser.
@@ -978,32 +976,6 @@ Unirest.Response = {
     'loopDetected': 508,
     'notExtended': 510
   }
-}
-
-/**
- * Expose cookie store (tough-cookie)
- *
- * @return {Function} Cookie Store
- */
-Unirest.jar = function (options) {
-  var jar = Unirest.request.jar()
-  options = options || {}
-
-  // Because Requests aliases toughcookie rather than returning.
-  if (options.store) {
-    jar._jar.store = options.store
-  }
-
-  if (options.rejectPublicSuffixes) {
-    jar._jar.rejectPublicSuffixes = options.rejectPublicSuffixes
-  }
-
-  // Alias helper methods
-  jar.add = jar.setCookie
-  jar.toString = jar.getCookieString
-
-  // Export
-  return jar
 }
 
 /**

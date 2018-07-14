@@ -600,7 +600,7 @@ var Unirest = function (method, uri, headers, body, callback) {
           })
         }
 
-        Request = Unirest.request($this.options.method || "GET", $this.options.url, $this.options.body || "GET", $this.options, handleRequestResponse)
+        Request = Unirest.request($this.options.method || "GET", $this.options.url, $this.options.body || {}, $this.options, handleRequestResponse)
 
         if ($this._multipart.length && $this._stream) {
           handleFormData(Request.form())

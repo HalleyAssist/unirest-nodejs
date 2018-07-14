@@ -9,7 +9,7 @@
   "dependencies": {
     "form-data": "^0.2.0",
     "mime-types": "2.x",
-    "needle": "~2.2.1"
+    "needle": "git+https://github.com/HalleyAssist/needle.git"
   },
   "devDependencies": {
     "body-parser": "^1.15.1",

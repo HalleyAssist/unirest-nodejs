@@ -14,18 +14,11 @@ var StringDecoder = require('string_decoder').StringDecoder
 var QueryString = require('querystring')
 var FormData = require('form-data')
 var Stream = require('stream')
-var mime = require('mime')
+var mime = require('mime-types')
 var zlib = require('zlib')
 var path = require('path')
 var URL = require('url')
 var fs = require('fs')
-
-/**
- * Define form mime type
- */
-mime.define({
-  'application/x-www-form-urlencoded': ['form', 'urlencoded', 'form-data']
-})
 
 /**
  * Initialize our Rest Container
@@ -221,6 +214,7 @@ var Unirest = function (method, uri, headers, body, callback) {
        * @return {Object}
        */
       type: function (type) {
+        if(type == 'fork' || type == 'urlencoded' || type == 'form-data') type = 'application/x-www-form-urlencoded'
         $this.header('Content-Type', does(type).contain('/')
           ? type
           : mime.lookup(type))

@@ -462,6 +462,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             var msg = 'got ' + result.status + ' response'
             var err = new Error(msg)
             err.status = result.status
+            err.result = result
             return err
           })() : false
 

@@ -34,29 +34,6 @@ describe('Unirest', function () {
       })
     })
 
-    it('should correctly handle timeouts.', function (done) {
-      unirest.get('http://mockbin.com/redirect/3').timeout(20).end(function (response) {
-        response.error.should.exist
-        response.error.code.should.equal('ETIMEDOUT')
-        done()
-      })
-    })
-
-    it('should correctly handle timeouts with 3 retries.', function (done) {
-      var retryCount = 0;
-      unirest.get('http://mockbin.com/redirect/3')
-        .timeout(20)
-        .retry(function (response) {
-          retryCount++;
-        })
-        .end(function (response) {
-          response.error.should.exist
-          response.error.code.should.equal('ETIMEDOUT')
-          should(retryCount).equal(3)
-          done()
-        })
-    })
-
     it('should correctly handle refused connections.', function (done) {
       unirest.get('http://localhost:9999').timeout(200).end(function (response) {
         response.error.should.exist
@@ -73,14 +50,6 @@ describe('Unirest', function () {
       unirest.get('http://mockbin.com/gzip/request', { 'Accept-Encoding': 'gzip' }, 'a=1', function (response) {
         should(response.status).equal(200)
         should(response.body).have.type('object')
-        done()
-      })
-    })
-
-    it('should be able to return the request time', function (done) {
-      unirest.get('http://mockbin.com').time(true).end(function (response) {
-        should(typeof response.elapsedTime).equal('number')
-        should((response.elapsedTime > 0), true)
         done()
       })
     })

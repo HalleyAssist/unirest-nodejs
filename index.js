@@ -13,7 +13,6 @@
 var StringDecoder = require('string_decoder').StringDecoder
 var QueryString = require('querystring')
 var FormData = require('form-data')
-var Stream = require('stream')
 var mime = require('mime-types')
 var path = require('path')
 var URL = require('url')
@@ -602,10 +601,18 @@ var Unirest = function (method, uri, headers, body, callback) {
         }
 
         $this.options.follow_max = 5
-        Request = Unirest.request($this.options.method || "GET", $this.options.url, $this.options.body || {}, $this.options, handleRequestResponse)
+
+        var method = $this.options.method || "GET"
+        var body = $this.options.body
+
+        Request = Unirest.request(method, $this.options.url, body || {}, $this.options, handleRequestResponse)
 
         if ($this._multipart.length && $this._stream) {
           handleFormData(Request.form())
+        }
+
+        if(callback){
+          Request = Request.catch(ex=>{})
         }
 
         return Request
@@ -732,8 +739,9 @@ var Unirest = function (method, uri, headers, body, callback) {
       body = null
     }
 
+
     if (headers) $this.set(headers)
-    if (body) $this.send(body)
+    if (body && method != "get") $this.send(body)
 
     return callback ? $this.end(callback) : $this
   }

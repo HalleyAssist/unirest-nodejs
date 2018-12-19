@@ -587,10 +587,13 @@ var Unirest = function (method, uri, headers, body, callback) {
             // Node 10+
             response.resume()
 
+            const type = Unirest.type(response.headers['content-type'], true)
+
             // Fallback
             response.on('data', function (chunk) {
-              if (typeof chunk === 'string') response.body += chunk
-              else response.body += decoder.write(chunk)
+              if (typeof chunk !== 'string') chunk = decoder.write(chunk)
+              
+              Unirest.Response.append(response, chunk, type)
             })
 
             // After all, we end up here
@@ -802,6 +805,31 @@ Unirest.parsers = {
     } catch (e) {}
 
     return data
+  },
+
+  ndjson: function (data) {
+    return data
+  }
+}
+
+
+Unirest.appenders = {
+  string: function(response, chunk){
+    response.body += chunk
+  },
+  json: function(response, chunk){
+    response.body += chunk
+  },
+  ndjson: function (data) {
+    if(typeof response.body === 'string') response.body = []
+    if(response._temp === undefined) response._temp = ''
+    var pos
+    if((pos = data.indexOf('\n')) != -1){
+      response._temp += data.substr(0, pos)
+      data = data.substr(pos+1)
+      response.body.push(JSON.parse(data))
+    }
+    response._temp += data
   }
 }
 
@@ -849,6 +877,15 @@ Unirest.Response = {
   parse: function (string, type) {
     var parser = Unirest.firstMatch(type, Unirest.enum.parse)
     return parser ? parser(string) : string
+  },
+
+  append: function (response, string, type) {
+    var append = Unirest.firstMatch(type, Unirest.enum.append)
+    if(append){
+      append(string)
+    }else{
+      Unirest.appenders.string(response, string)
+    }
   },
 
   parseHeader: function (str) {
@@ -945,7 +982,15 @@ Unirest.enum = {
   parse: {
     'application/x-www-form-urlencoded': Unirest.parsers.string,
     'application/json': Unirest.parsers.json,
+    'application/x-ndjson': Unirest.parsers.ndjson,
     '+json': Unirest.parsers.json
+  },
+
+  appenders: {
+    'application/x-www-form-urlencoded': Unirest.appenders.string,
+    'application/json': Unirest.appenders.json,
+    'application/x-ndjson': Unirest.appenders.ndjson,
+    '+json': Unirest.appenders.json
   },
 
   methods: [

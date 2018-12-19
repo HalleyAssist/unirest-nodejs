@@ -407,7 +407,6 @@ var Unirest = function (method, uri, headers, body, callback) {
         function handleRequestResponse (error, response, body, cb) {
           var result = {}
           var status
-          var data
           var type
 
           // Handle pure error
@@ -515,13 +514,10 @@ var Unirest = function (method, uri, headers, body, callback) {
           result.headers = response.headers
 
           // Handle Response Body
-          if (body) {
-            type = Unirest.type(result.headers['content-type'], true)
-            if (type) data = Unirest.Response.parse(body, type)
-            else data = body
-          }
+          type = Unirest.type(result.headers['content-type'], true)
+          if (type) body = Unirest.Response.parse(body, type)
 
-          result.body = data
+          result.body = body
 
           ;(handleRetriableRequestResponse(result)) && (cb) && cb(result)
         }
@@ -621,7 +617,7 @@ var Unirest = function (method, uri, headers, body, callback) {
         if ($this._multipart.length && $this._stream) {
           handleFormData(Request.form())
         }
-        
+
         if(callback){
           Request = Request.then(r=>{
             callback(r)
@@ -813,12 +809,14 @@ Unirest.parsers = {
   json: function (data) {
     try {
       data = JSON.parse(data)
-    } catch (e) {}
+    } catch (e) {
+    }
 
     return data
   },
 
   ndjson: function (data) {
+    if(data === '') data = []
     return data
   }
 }
@@ -826,9 +824,6 @@ Unirest.parsers = {
 
 Unirest.appenders = {
   string: function(response, chunk){
-    response.body += chunk
-  },
-  json: function(response, chunk){
     response.body += chunk
   },
   ndjson: function (response, chunk) {
@@ -999,10 +994,7 @@ Unirest.enum = {
   },
 
   append: {
-    'application/x-www-form-urlencoded': Unirest.appenders.string,
-    'application/json': Unirest.appenders.json,
-    'application/x-ndjson': Unirest.appenders.ndjson,
-    '+json': Unirest.appenders.json
+    'application/x-ndjson': Unirest.appenders.ndjson
   },
 
   methods: [

@@ -404,7 +404,7 @@ var Unirest = function (method, uri, headers, body, callback) {
           return false
         }
 
-        function handleRequestResponse (error, response, body) {
+        function handleRequestResponse (error, response, body, cb) {
           var result = {}
           var status
           var data
@@ -414,8 +414,8 @@ var Unirest = function (method, uri, headers, body, callback) {
           if (error && !response) {
             result.error = error
 
-            if (handleRetriableRequestResponse(result) && callback) {
-              callback(result)
+            if (handleRetriableRequestResponse(result) && cb) {
+              cb(result)
             }
 
             return
@@ -430,8 +430,8 @@ var Unirest = function (method, uri, headers, body, callback) {
               message: 'No response found.'
             }
 
-            if (handleRetriableRequestResponse(result) && callback) {
-              callback(result)
+            if (handleRetriableRequestResponse(result) && cb) {
+              cb(result)
             }
 
             return
@@ -512,7 +512,6 @@ var Unirest = function (method, uri, headers, body, callback) {
 
           // Obtain response body
           body = body || response.body
-          result.raw_body = body
           result.headers = response.headers
 
           // Handle Response Body
@@ -524,7 +523,7 @@ var Unirest = function (method, uri, headers, body, callback) {
 
           result.body = data
 
-          ;(handleRetriableRequestResponse(result)) && (callback) && callback(result)
+          ;(handleRetriableRequestResponse(result)) && (cb) && cb(result)
         }
 
         function handleFormData (form) {
@@ -543,6 +542,37 @@ var Unirest = function (method, uri, headers, body, callback) {
           }
 
           return form
+        }
+
+        function handleResponse (cb) {
+          return function(error, response){
+            var decoder = new StringDecoder('utf8')
+
+            if (error) {
+              return handleRequestResponse(error, response, null, cb)
+            }
+
+            if (!response.body) {
+              response.body = ''
+            }
+
+            const type = Unirest.type(response.headers['content-type'], true)
+
+            // Node 10+
+            response.resume()
+
+            // Fallback
+            response.on('data', function (chunk) {
+              if (typeof chunk !== 'string') chunk = decoder.write(chunk)
+              
+              Unirest.Response.append(response, chunk, type)
+            })
+
+            // After all, we end up here
+            response.on('end', function () {
+              return handleRequestResponse(error, response, null, cb)
+            })
+          }
         }
 
         if ($this._multipart.length && !$this._stream) {
@@ -573,34 +603,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             method: $this.options.method,
             headers: $this.options.headers,
             auth: authn($this.options.auth || parts.auth)
-          }, function (error, response) {
-            var decoder = new StringDecoder('utf8')
-
-            if (error) {
-              return handleRequestResponse(error, response)
-            }
-
-            if (!response.body) {
-              response.body = ''
-            }
-
-            // Node 10+
-            response.resume()
-
-            const type = Unirest.type(response.headers['content-type'], true)
-
-            // Fallback
-            response.on('data', function (chunk) {
-              if (typeof chunk !== 'string') chunk = decoder.write(chunk)
-              
-              Unirest.Response.append(response, chunk, type)
-            })
-
-            // After all, we end up here
-            response.on('end', function () {
-              return handleRequestResponse(error, response)
-            })
-          })
+          }, handleResponse(callback))
         }
 
         $this.options.follow_max = 5
@@ -608,14 +611,22 @@ var Unirest = function (method, uri, headers, body, callback) {
         var method = $this.options.method || "GET"
         var body = $this.options.body
 
-        Request = Unirest.request(method, $this.options.url, body || {}, $this.options, handleRequestResponse)
+        var Request = new Promise(function(resolve, reject) {
+          const rHandle = handleResponse(resolve)
+          Unirest.request.request(method, $this.options.url, body || {}, $this.options)
+            .on('response', r=>rHandle(null, r))
+            .on('error', e=>rHandle(e))
+        })
 
         if ($this._multipart.length && $this._stream) {
           handleFormData(Request.form())
         }
-
+        
         if(callback){
-          Request = Request.catch(ex=>{})
+          Request = Request.then(r=>{
+            callback(r)
+            return r
+          },(ex)=>{})
         }
 
         return Request
@@ -820,16 +831,17 @@ Unirest.appenders = {
   json: function(response, chunk){
     response.body += chunk
   },
-  ndjson: function (data) {
+  ndjson: function (response, chunk) {
     if(typeof response.body === 'string') response.body = []
     if(response._temp === undefined) response._temp = ''
     var pos
-    if((pos = data.indexOf('\n')) != -1){
-      response._temp += data.substr(0, pos)
-      data = data.substr(pos+1)
-      response.body.push(JSON.parse(data))
+    while((pos = chunk.indexOf("\n")) != -1){
+      response._temp += chunk.substr(0, pos)
+      chunk = chunk.substr(pos+1)
+      response.body.push(JSON.parse(response._temp))
+      response._temp = ''
     }
-    response._temp += data
+    response._temp += chunk
   }
 }
 
@@ -882,7 +894,7 @@ Unirest.Response = {
   append: function (response, string, type) {
     var append = Unirest.firstMatch(type, Unirest.enum.append)
     if(append){
-      append(string)
+      append(response, string)
     }else{
       Unirest.appenders.string(response, string)
     }
@@ -986,7 +998,7 @@ Unirest.enum = {
     '+json': Unirest.parsers.json
   },
 
-  appenders: {
+  append: {
     'application/x-www-form-urlencoded': Unirest.appenders.string,
     'application/json': Unirest.appenders.json,
     'application/x-ndjson': Unirest.appenders.ndjson,

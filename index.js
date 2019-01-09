@@ -622,7 +622,9 @@ var Unirest = function (method, uri, headers, body, callback) {
           Request = Request.then(r=>{
             callback(r)
             return r
-          },(ex)=>{})
+          },ex=>{
+            callback({error: ex})
+          })
         }
 
         return Request

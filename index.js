@@ -611,7 +611,9 @@ var Unirest = function (method, uri, headers, body, callback) {
           const rHandle = handleResponse(resolve)
           Unirest.request.request(method, $this.options.url, body || {}, $this.options)
             .on('response', r=>rHandle(null, r))
-            .on('error', e=>rHandle(e))
+            .on('done', e=>{
+              if(e) rHandle(e)
+            })
         })
 
         if ($this._multipart.length && $this._stream) {

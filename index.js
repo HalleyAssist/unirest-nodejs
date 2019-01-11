@@ -549,7 +549,7 @@ var Unirest = function (method, uri, headers, body, callback) {
               return handleRequestResponse(error, response, null, cb)
             }
 
-            const type = Unirest.type(response.headers['content-type'], true)
+            let type
 
             
             needleResponse.on('response', function (_response) {
@@ -557,6 +557,7 @@ var Unirest = function (method, uri, headers, body, callback) {
               if (!response.body) {
                 response.body = ''
               }
+              type = Unirest.type(response.headers['content-type'], true)
             })
 
             // Fallback

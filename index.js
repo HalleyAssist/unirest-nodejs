@@ -550,20 +550,22 @@ var Unirest = function (method, uri, headers, body, callback) {
             }
 
             let type
-
             
             needleResponse.on('response', function (_response) {
               response = _response
+
               if (!response.body) {
                 response.body = ''
               }
               type = Unirest.type(response.headers['content-type'], true)
+              console.log("type: %s", type)
             })
 
             // Fallback
             needleResponse.on('data', function (chunk) {
               if (typeof chunk !== 'string') chunk = decoder.write(chunk)
               
+              console.log("type2: %s", type)
               Unirest.Response.append(response, chunk, type)
             })
 

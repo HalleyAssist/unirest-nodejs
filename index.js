@@ -558,6 +558,8 @@ var Unirest = function (method, uri, headers, body, callback) {
                 response.body = ''
               }
 
+              response.resume()
+
               let type = Unirest.type(response.headers['content-type'], true)
               
               // Fallback
@@ -621,7 +623,7 @@ var Unirest = function (method, uri, headers, body, callback) {
         var Request = new Promise(function(resolve, reject) {
           const rHandle = handleResponse(null, resolve)
           const response = Unirest.request.request(method, $this.options.url, body || {}, $this.options)
-          rHandle(response)
+          rHandle(null, response)
         })
 
         if ($this._multipart.length && $this._stream) {

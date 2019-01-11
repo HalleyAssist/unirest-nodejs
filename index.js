@@ -238,7 +238,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             $this.type('form')
             type = $this.options.headers[$this.hasHeader('content-type')]
             $this.options.body = Unirest.serializers.form(data)
-          } else if (~type.indexOf('json')) {
+          } else if (~type.indexOf('/json') || type == "json") {
             $this.options.json = true
 
             if ($this.options.body && is($this.options.body).a(Object)) {
@@ -566,8 +566,12 @@ var Unirest = function (method, uri, headers, body, callback) {
 
             // After all, we end up here
             response.on('end', function () {
-              return handleRequestResponse(error, response, null, cb)
+              return handleRequestResponse(null, response, null, cb)
             })
+
+            response.on('error', (err) => {
+              return handleRequestResponse(err, response, null, cb)
+            });
           }
         }
 
@@ -603,17 +607,15 @@ var Unirest = function (method, uri, headers, body, callback) {
         }
 
         $this.options.follow_max = 5
+        $this.options.parser = false
 
         var method = $this.options.method || "GET"
         var body = $this.options.body
 
         var Request = new Promise(function(resolve, reject) {
           const rHandle = handleResponse(resolve)
-          Unirest.request.request(method, $this.options.url, body || {}, $this.options)
-            .on('response', r=>rHandle(null, r))
-            .on('done', e=>{
-              if(e) rHandle(e)
-            })
+          const response = Unirest.request.request(method, $this.options.url, body || {}, $this.options)
+          rHandle(response)
         })
 
         if ($this._multipart.length && $this._stream) {

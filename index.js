@@ -551,6 +551,14 @@ var Unirest = function (method, uri, headers, body, callback) {
 
             let type
             
+            needleResponse.on('err', function (error) {
+              return handleRequestResponse(error, response, null, cb)
+            })
+
+            needleResponse.on('error', (err) => {
+              return handleRequestResponse(err, response, null, cb)
+            });
+            
             needleResponse.on('response', function (_response) {
               response = _response
 
@@ -573,10 +581,6 @@ var Unirest = function (method, uri, headers, body, callback) {
               needleResponse.on('end', function () {
                 return handleRequestResponse(null, response, null, cb)
               })
-
-              needleResponse.on('error', (err) => {
-                return handleRequestResponse(err, response, null, cb)
-              });
             })
 
             

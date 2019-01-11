@@ -615,7 +615,7 @@ var Unirest = function (method, uri, headers, body, callback) {
         }
 
         $this.options.follow_max = 5
-        $this.options.parser = false
+        $this.options.parse_response = false
 
         var method = $this.options.method || "GET"
         var body = $this.options.body

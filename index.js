@@ -557,6 +557,7 @@ var Unirest = function (method, uri, headers, body, callback) {
               if (!response.body) {
                 response.body = ''
               }
+              console.log("headers: %j", response.headers)
               type = Unirest.type(response.headers['content-type'], true)
               console.log("type: %s", type)
             })

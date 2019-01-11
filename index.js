@@ -571,7 +571,6 @@ var Unirest = function (method, uri, headers, body, callback) {
 
               // After all, we end up here
               needleResponse.on('end', function () {
-                console.log("cb %s", cb)
                 return handleRequestResponse(null, response, null, cb)
               })
 

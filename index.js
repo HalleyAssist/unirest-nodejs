@@ -571,6 +571,7 @@ var Unirest = function (method, uri, headers, body, callback) {
 
               // After all, we end up here
               needleResponse.on('end', function () {
+                console.log("cb %s", cb)
                 return handleRequestResponse(null, response, null, cb)
               })
 
@@ -621,7 +622,7 @@ var Unirest = function (method, uri, headers, body, callback) {
         var body = $this.options.body
 
         var Request = new Promise(function(resolve, reject) {
-          const rHandle = handleResponse(null, resolve)
+          const rHandle = handleResponse(resolve)
           const response = Unirest.request.request(method, $this.options.url, body || {}, $this.options)
           rHandle(null, response)
         })

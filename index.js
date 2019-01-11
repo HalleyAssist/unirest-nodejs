@@ -541,35 +541,37 @@ var Unirest = function (method, uri, headers, body, callback) {
         }
 
         function handleResponse (cb) {
-          return function(error, response){
+          return function(error, needleResponse){
             var decoder = new StringDecoder('utf8')
 
+            let response = null
             if (error) {
               return handleRequestResponse(error, response, null, cb)
             }
 
-            if (!response.body) {
-              response.body = ''
-            }
-
             const type = Unirest.type(response.headers['content-type'], true)
 
-            // Node 10+
-            response.resume()
+            
+            needleResponse.on('response', function (_response) {
+              response = _response
+              if (!response.body) {
+                response.body = ''
+              }
+            })
 
             // Fallback
-            response.on('data', function (chunk) {
+            needleResponse.on('data', function (chunk) {
               if (typeof chunk !== 'string') chunk = decoder.write(chunk)
               
               Unirest.Response.append(response, chunk, type)
             })
 
             // After all, we end up here
-            response.on('end', function () {
+            needleResponse.on('end', function () {
               return handleRequestResponse(null, response, null, cb)
             })
 
-            response.on('error', (err) => {
+            needleResponse.on('error', (err) => {
               return handleRequestResponse(err, response, null, cb)
             });
           }

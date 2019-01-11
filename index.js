@@ -557,27 +557,27 @@ var Unirest = function (method, uri, headers, body, callback) {
               if (!response.body) {
                 response.body = ''
               }
-              console.log("headers: %j", response.headers)
-              type = Unirest.type(response.headers['content-type'], true)
-              console.log("type: %s", type)
-            })
 
-            // Fallback
-            needleResponse.on('data', function (chunk) {
-              if (typeof chunk !== 'string') chunk = decoder.write(chunk)
+              let type = Unirest.type(response.headers['content-type'], true)
               
-              console.log("type2: %s", type)
-              Unirest.Response.append(response, chunk, type)
+              // Fallback
+              needleResponse.on('data', function (chunk) {
+                if (typeof chunk !== 'string') chunk = decoder.write(chunk)
+                
+                Unirest.Response.append(response, chunk, type)
+              })
+
+              // After all, we end up here
+              needleResponse.on('end', function () {
+                return handleRequestResponse(null, response, null, cb)
+              })
+
+              needleResponse.on('error', (err) => {
+                return handleRequestResponse(err, response, null, cb)
+              });
             })
 
-            // After all, we end up here
-            needleResponse.on('end', function () {
-              return handleRequestResponse(null, response, null, cb)
-            })
-
-            needleResponse.on('error', (err) => {
-              return handleRequestResponse(err, response, null, cb)
-            });
+            
           }
         }
 

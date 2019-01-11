@@ -617,9 +617,9 @@ var Unirest = function (method, uri, headers, body, callback) {
 
         var method = $this.options.method || "GET"
         var body = $this.options.body
+        const rHandle = handleResponse(null, resolve)
 
         var Request = new Promise(function(resolve, reject) {
-          const rHandle = handleResponse(null, resolve)
           const response = Unirest.request.request(method, $this.options.url, body || {}, $this.options)
           rHandle(response)
         })

@@ -515,7 +515,7 @@ var Unirest = function (method, uri, headers, body, callback) {
 
           // Handle Response Body
           type = Unirest.type(result.headers['content-type'], true)
-          if (type) body = Unirest.Response.parse(body, type)
+          if (type) body = Unirest.Response.parse(response, body, type)
 
           result.body = body
 
@@ -795,7 +795,7 @@ Unirest.trim = ''.trim
  * @type {Object}
  */
 Unirest.parsers = {
-  string: function (data) {
+  string: function (response, data) {
     var obj = {}
     var pairs = data.split('&')
     var parts
@@ -810,7 +810,7 @@ Unirest.parsers = {
     return obj
   },
 
-  json: function (data) {
+  json: function (response, data) {
     try {
       data = JSON.parse(data)
     } catch (e) {
@@ -819,8 +819,11 @@ Unirest.parsers = {
     return data
   },
 
-  ndjson: function (data) {
+  ndjson: function (response, data) {
     if(data === '') data = []
+    if(response._temp){
+      data.push(JSON.parse(response._temp))
+    }
     return data
   }
 }
@@ -837,7 +840,13 @@ Unirest.appenders = {
     while((pos = chunk.indexOf("\n")) != -1){
       response._temp += chunk.substr(0, pos)
       chunk = chunk.substr(pos+1)
-      response.body.push(JSON.parse(response._temp))
+      let parsed = undefined
+      try {
+        parsed = JSON.parse(response._temp)
+      }catch(ex){
+
+      }
+      response.body.push(parsed)
       response._temp = ''
     }
     response._temp += chunk
@@ -885,9 +894,9 @@ Unirest.Request = {
  * @type {Object}
  */
 Unirest.Response = {
-  parse: function (string, type) {
+  parse: function (response, string, type) {
     var parser = Unirest.firstMatch(type, Unirest.enum.parse)
-    return parser ? parser(string) : string
+    return parser ? parser(response, string) : string
   },
 
   append: function (response, string, type) {

@@ -46,13 +46,13 @@ describe('Unirest', function () {
       })
     })
 
-    it('should be able to work like other unirest libraries', function (done) {
+    /*it('should be able to work like other unirest libraries', function (done) {
       unirest.get('http://mockbin.com/gzip/request', { }, 'a=1', function (response) {
         should(response.status).equal(200)
         should(response.body).have.type('object')
         done()
       })
-    })
+    })*/
   })
 
   describe('GET request', function () {

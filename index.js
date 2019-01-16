@@ -237,7 +237,7 @@ var Unirest = function (method, uri, headers, body, callback) {
           if (!type) {
             $this.type('form')
             type = $this.options.headers[$this.hasHeader('content-type')]
-            $this.options.body = Unirest.serializers.form(data)
+            $this.options.body = data
           } else if (~type.indexOf('/json') || type == "json") {
             $this.options.json = true
 

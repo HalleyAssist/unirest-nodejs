@@ -24,6 +24,13 @@ var fs = require('fs')
  * @type {Object}
  */
 var Unirest = function (method, uri, headers, body, callback) {
+  function handleCallback(cb, ...args){
+    if(cb.emit){
+      cb.emit("done", ...args)
+    }else{
+      cb(...args)
+    }
+  }
   var unirest = function (uri, headers, body, callback) {
     var $this = {
       /**
@@ -414,7 +421,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             result.error = error
 
             if (handleRetriableRequestResponse(result) && cb) {
-              cb(result)
+              handleCallback(cb, result)
             }
 
             return
@@ -430,7 +437,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             }
 
             if (handleRetriableRequestResponse(result) && cb) {
-              cb(result)
+              handleCallback(cb, result)
             }
 
             return
@@ -515,11 +522,11 @@ var Unirest = function (method, uri, headers, body, callback) {
 
           // Handle Response Body
           type = Unirest.type(result.headers['content-type'], true)
-          if (type) body = Unirest.Response.parse(response, body, type)
+          if (type) body = Unirest.Response.parse(response, body, type, cb)
 
           result.body = body
 
-          ;(handleRetriableRequestResponse(result)) && (cb) && cb(result)
+          ;(handleRetriableRequestResponse(result)) && (cb) && handleCallback(cb, result)
         }
 
         function handleFormData (form) {
@@ -574,7 +581,7 @@ var Unirest = function (method, uri, headers, body, callback) {
               needleResponse.on('data', function (chunk) {
                 if (typeof chunk !== 'string') chunk = decoder.write(chunk)
                 
-                Unirest.Response.append(response, chunk, type)
+                Unirest.Response.append(response, chunk, type, callback)
               })
 
               // After all, we end up here
@@ -833,10 +840,11 @@ Unirest.parsers = {
     return data
   },
 
-  ndjson: function (response, data) {
+  ndjson: function (response, data, cb) {
     if(data === '') data = []
     if(response._temp){
-      data.push(JSON.parse(response._temp))
+      if(cb && cb.emit) cb.emit("parsed", data)
+      else data.push(JSON.parse(response._temp))
     }
     return data
   }
@@ -847,7 +855,7 @@ Unirest.appenders = {
   string: function(response, chunk){
     response.body += chunk
   },
-  ndjson: function (response, chunk) {
+  ndjson: function (response, chunk, callback) {
     if(typeof response.body === 'string') response.body = []
     if(response._temp === undefined) response._temp = ''
     var pos
@@ -860,7 +868,11 @@ Unirest.appenders = {
       }catch(ex){
 
       }
-      response.body.push(parsed)
+      if(callback && callback.emit){
+        callback.emit("parsed", parsed)
+      } else {
+        response.body.push(parsed)
+      }
       response._temp = ''
     }
     response._temp += chunk
@@ -908,15 +920,15 @@ Unirest.Request = {
  * @type {Object}
  */
 Unirest.Response = {
-  parse: function (response, string, type) {
+  parse: function (response, string, type, cb) {
     var parser = Unirest.firstMatch(type, Unirest.enum.parse)
-    return parser ? parser(response, string) : string
+    return parser ? parser(response, string, cb) : string
   },
 
-  append: function (response, string, type) {
+  append: function (response, string, type, callback) {
     var append = Unirest.firstMatch(type, Unirest.enum.append)
     if(append){
-      append(response, string)
+      append(response, string, callback)
     }else{
       Unirest.appenders.string(response, string)
     }

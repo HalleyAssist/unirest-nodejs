@@ -24,11 +24,14 @@ var fs = require('fs')
  * @type {Object}
  */
 var Unirest = function (method, uri, headers, body, callback) {
-  function handleCallback(cb, ...args){
+  function handleCallback(cb, result){
     if(cb.emit){
-      cb.emit("done", ...args)
+      if(result.error) {
+        cb.emit("error", result.error)
+      }
+      cb.emit("done", result)
     }else{
-      cb(...args)
+      cb(result)
     }
   }
   var unirest = function (uri, headers, body, callback) {

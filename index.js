@@ -424,7 +424,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             result.error = error
 
             if (handleRetriableRequestResponse(result) && cb) {
-              handleCallback(cb, result)
+              cb(result)
             }
 
             return
@@ -440,7 +440,7 @@ var Unirest = function (method, uri, headers, body, callback) {
             }
 
             if (handleRetriableRequestResponse(result) && cb) {
-              handleCallback(cb, result)
+              cb(result)
             }
 
             return
@@ -529,7 +529,7 @@ var Unirest = function (method, uri, headers, body, callback) {
 
           result.body = body
 
-          ;(handleRetriableRequestResponse(result)) && (cb) && handleCallback(cb, result)
+          ;(handleRetriableRequestResponse(result)) && (cb) && cb(result)
         }
 
         function handleFormData (form) {
@@ -646,10 +646,10 @@ var Unirest = function (method, uri, headers, body, callback) {
 
         if(callback){
           Request = Request.then(r=>{
-            callback(r)
+            handleCallback(callback,r)
             return r
           },ex=>{
-            callback({error: ex})
+            handleCallback(callback,{error: ex})
           })
         }
 

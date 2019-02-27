@@ -592,7 +592,21 @@ var Unirest = function (method, uri, headers, body, callback) {
                 return handleRequestResponse(null, response, null, cb)
               })
             })
+            // fix for handling multipart form data responses
+            if ($this._multipart.length && !$this._stream) {
+              needleResponse.resume()
+              needleResponse.body = "";
+              // Fallback
+              needleResponse.on('data', function (chunk) {
+                if (typeof chunk === 'string') needleResponse.body += chunk
+                else needleResponse.body += decoder.write(chunk);
+              })
 
+              // After all, we end up here
+              needleResponse.on('end', function () {
+                return handleRequestResponse(null, needleResponse, null, cb)
+              })
+            }
             
           }
         }

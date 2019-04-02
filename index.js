@@ -860,8 +860,13 @@ Unirest.parsers = {
   ndjson: function (response, data, cb) {
     if(data === '') data = []
     if(response._temp){
-      if(cb && cb.emit) cb.emit("parsed", data)
-      else data.push(JSON.parse(response._temp))
+      let parsed = null
+      try {
+        parsed = JSON.parse(response._temp)
+      } catch(ex){}
+
+      if(cb && cb.emit) cb.emit("parsed", parsed)
+      else data.push(parsed)
     }
     return data
   }
@@ -879,11 +884,11 @@ Unirest.appenders = {
     while((pos = chunk.indexOf("\n")) != -1){
       response._temp += chunk.substr(0, pos)
       chunk = chunk.substr(pos+1)
-      let parsed = undefined
+      let parsed
       try {
         parsed = JSON.parse(response._temp)
       }catch(ex){
-
+        parsed = null
       }
       if(callback && callback.emit){
         callback.emit("parsed", parsed)
